@@ -1,0 +1,7 @@
+node_modules/
+*.log
+dist/
+out/
+.env
+.env.local
+aigui.log

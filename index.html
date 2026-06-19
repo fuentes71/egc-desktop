@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>egc-desktop</title>
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <!-- Highlight.js VS Code Theme -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/vs2015.min.css">
+  <!-- Marked & Highlight.js -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+</head>
+<body>
+  <div class="drag-region"></div>
+  
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h2>egc-desktop</h2>
+        <span class="badge">v0.1</span>
+      </div>
+      <button class="new-chat-btn">
+        <svg stroke="currentColor" fill="none" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" height="16" width="16" xmlns="http://www.w3.org/2000/svg"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        Nova Conversa
+      </button>
+
+      <ul id="conversation-list" style="list-style: none; padding: 0; margin-top: 15px; overflow-y: auto; flex-grow: 1;"></ul>
+
+      <div class="settings-box">
+        <label>Engine Base:</label>
+        <select id="engine-select">
+          <!-- Populated dynamically via IPC -->
+        </select>
+      </div>
+
+    </aside>
+
+    <main class="chat-area">
+      <div id="chat-history" class="chat-history">
+        <!-- Messages will appear here -->
+        <div class="message system">
+          <div class="avatar">⚙️</div>
+          <div class="content">
+            Sistema pronto. Digite um comando para que a IA processe no terminal.
+          </div>
+        </div>
+      </div>
+
+      <div class="input-area">
+        <div id="model-badge" class="model-badge" style="display: none;"></div>
+        
+        <!-- Slash command popup -->
+        <div id="slash-popup" class="slash-popup" style="display: none;">
+          <div class="popup-item" data-val="gpt-4o">GPT-4o</div>
+          <div class="popup-item" data-val="claude-3.5-sonnet">Claude 3.5 Sonnet</div>
+          <div class="popup-item" data-val="gemini-2.5-pro">Gemini 2.5 Pro</div>
+          <div class="popup-item" data-val="gemini-2.5-flash">Gemini 2.5 Flash</div>
+          <div class="popup-item" data-val="llama3">Llama 3 Local</div>
+        </div>
+
+        <div class="input-wrapper">
+          <textarea id="prompt-input" placeholder="Envie uma mensagem (digite /model para escolher)..." rows="1"></textarea>
+          <button id="send-btn" disabled>
+            <svg stroke="currentColor" fill="none" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" height="16" width="16" xmlns="http://www.w3.org/2000/svg"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+          </button>
+        </div>
+        <div class="footer-text">AIGUI pode cometer erros. Verifique os comandos de terminal.</div>
+      </div>
+    </main>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
