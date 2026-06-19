@@ -102,8 +102,11 @@ function createWindow() {
     height: 700,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
-      contextIsolation: true,
-      nodeIntegration: false
+      contextIsolation: true,   // isola contexto renderer do main
+      nodeIntegration: false,   // renderer sem acesso Node
+      sandbox: true,            // sandbox do Chromium ativo
+      webSecurity: true,        // same-origin policy ativa
+      allowRunningInsecureContent: false
     },
     autoHideMenuBar: true,
     titleBarStyle: 'hidden',
@@ -115,15 +118,32 @@ function createWindow() {
 
   mainWindow.loadFile('index.html');
 
-  // Open DevTools automatically for debugging (disabled as requested)
-  // mainWindow.webContents.openDevTools({ mode: 'detach' });
+  // Bloqueia qualquer tentativa de navegação para URL externa
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    if (!url.startsWith('file://')) {
+      event.preventDefault();
+      log('WARN', `Navegação bloqueada para: ${url}`);
+    }
+  });
+
+  // Bloqueia abertura de novas janelas (ex: window.open)
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.startsWith('https://') || url.startsWith('http://')) {
+      require('electron').shell.openExternal(url);
+    } else {
+      log('WARN', `Abertura de janela bloqueada: ${url}`);
+    }
+    return { action: 'deny' };
+  });
 
   mainWindow.webContents.on('did-finish-load', () => {
     log('INFO', 'Renderer finished loading');
   });
 
   mainWindow.webContents.on('console-message', (_e, level, msg, line, src) => {
-    log('RENDERER', `[${src}:${line}] ${msg}`);
+    // Não loga mensagens do renderer que contenham dados sensíveis
+    const safeMsg = msg.substring(0, 300);
+    log('RENDERER', `[${src}:${line}] ${safeMsg}`);
   });
 }
 
@@ -371,8 +391,22 @@ setInterval(() => {
 }, 2 * 60 * 60 * 1000);
 
 ipcMain.on('send-prompt', async (event, data) => {
-  const { text, engine, model } = data;
-  log('INFO', `IPC send-prompt received: text="${text}" engine="${engine}" model="${model}"`);
+  // Valida e sanitiza o input do renderer antes de qualquer uso
+  if (!data || typeof data !== 'object') {
+    log('WARN', 'IPC send-prompt: payload inválido ignorado');
+    return;
+  }
+
+  const text   = (typeof data.text   === 'string' ? data.text   : '').trim().slice(0, 100000);
+  const engine = (typeof data.engine === 'string' ? data.engine : '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64);
+  const model  = (typeof data.model  === 'string' ? data.model  : '').replace(/[^a-zA-Z0-9._-]/g, '').slice(0, 64);
+
+  if (!text) {
+    log('WARN', 'IPC send-prompt: texto vazio ignorado');
+    return;
+  }
+
+  log('INFO', `IPC send-prompt received: text="${text.substring(0,80)}" engine="${engine}" model="${model}"`);
   log('INFO', 'Working dir:', workingDir);
 
   let isNewConversation = false;

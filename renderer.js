@@ -210,8 +210,21 @@ marked.setOptions({
 });
 
 function renderMarkdown(text) {
-  // marked.parse renders the Markdown to HTML, with highlight.js integrated
-  return marked.parse(text);
+  // 1. Converte Markdown → HTML
+  const rawHtml = marked.parse(text);
+  // 2. Sanitiza via DOMPurify antes de injetar no DOM (previne XSS)
+  return DOMPurify.sanitize(rawHtml, {
+    ALLOWED_TAGS: [
+      'p','br','strong','em','b','i','u','s','code','pre','blockquote',
+      'ul','ol','li','h1','h2','h3','h4','h5','h6',
+      'table','thead','tbody','tr','th','td',
+      'a','img','hr','span','div'
+    ],
+    ALLOWED_ATTR: ['href','src','alt','class','id','target','rel','style'],
+    FORBID_TAGS: ['script','iframe','object','embed','form','input'],
+    FORBID_ATTR: ['onerror','onload','onclick','onmouseover','onfocus','onblur'],
+    ALLOW_DATA_ATTR: false
+  });
 }
 
 // ── Typing indicator ─────────────────────────────────────────────
@@ -236,7 +249,13 @@ function sendPrompt() {
   const text = promptInput.value.trim();
   if (!text) return;
 
-  appendMessage('user', '👤', text);
+  // Limita tamanho do prompt no frontend (50KB)
+  if (text.length > 50000) {
+    alert('Mensagem muito longa. Limite: 50.000 caracteres.');
+    return;
+  }
+
+  appendMessage('user', '\u{1F464}', text);
 
   promptInput.value = '';
   promptInput.style.height = 'auto';
@@ -311,7 +330,7 @@ window.electronAPI.onProcessFinished((code) => {
 
   // If process finished with no output, show a generic error
   if (currentBotMessageEl && accumulatedText.trim() === '') {
-    currentBotMessageEl.innerHTML = '<span style="color:#ff5f57">Nenhuma resposta recebida. Verifique sua chave de API nas configurações.</span>';
+    currentBotMessageEl.innerHTML = '<span style="color:#ff5f57">Nenhuma resposta recebida. Verifique os logs da aplicação.</span>';
   }
 
   currentBotMessageEl = null;
